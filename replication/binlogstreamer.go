@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/pingcap/errors"
-	"github.com/siddontang/go-log/log"
 )
 
 var (
@@ -74,9 +73,11 @@ func (s *BinlogStreamer) close() {
 func (s *BinlogStreamer) closeWithError(err error) {
 	if err == nil {
 		err = ErrSyncClosed
-	} else {
-		log.Errorf("close sync with err: %v", err)
 	}
+	/*else {
+		log.Errorf("close sync with err: %v", err)
+
+	}*/
 
 	select {
 	case s.ech <- err:
