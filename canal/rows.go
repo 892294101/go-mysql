@@ -36,14 +36,14 @@ func newRowsEvent(table *schema.Table, action string, rows [][]interface{}, head
 	e.Rows = rows
 	e.Header = header
 
-	e.handleUnsigned()
+	//e.handleUnsigned()
 
 	return e
 }
 
 const maxMediumintUnsigned int32 = 16777215
 
-func (r *RowsEvent) handleUnsigned() {
+/*func (r *RowsEvent) handleUnsigned() {
 	// Handle Unsigned Columns here, for binlog replication, we can't know the integer is unsigned or not,
 	// so we use int type but this may cause overflow outside sometimes, so we must convert to the really .
 	// unsigned type
@@ -76,7 +76,7 @@ func (r *RowsEvent) handleUnsigned() {
 			}
 		}
 	}
-}
+}*/
 
 // String implements fmt.Stringer interface.
 func (r *RowsEvent) String() string {

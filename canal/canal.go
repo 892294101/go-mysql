@@ -337,7 +337,7 @@ func (c *Canal) GetTable(db string, table string) (*schema.Table, error) {
 				Schema:  db,
 				Name:    table,
 				Columns: make([]schema.TableColumn, 0, 2),
-				Indexes: make([]*schema.Index, 0),
+				//Indexes: make([]*schema.Index, 0),
 			}
 			ta.AddColumn("id", "bigint(20)", "", "")
 			ta.AddColumn("type", "char(1)", "", "")
