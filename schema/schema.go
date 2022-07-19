@@ -64,11 +64,11 @@ type Table struct {
 	Schema string
 	Name   string
 
-	Columns   []TableColumn
-	Indexes   []*Index
+	Columns []TableColumn
+	/*Indexes   []*Index
 	PKColumns []int
 
-	UnsignedColumns []int
+	UnsignedColumns []int*/
 }
 
 func (ta *Table) String() string {
@@ -141,7 +141,7 @@ func (ta *Table) AddColumn(name string, columnType string, collation string, ext
 
 	if strings.Contains(columnType, "unsigned") || strings.Contains(columnType, "zerofill") {
 		ta.Columns[index].IsUnsigned = true
-		ta.UnsignedColumns = append(ta.UnsignedColumns, index)
+		//ta.UnsignedColumns = append(ta.UnsignedColumns, index)
 	}
 
 	if extra == "auto_increment" {
@@ -183,7 +183,7 @@ func (ta *Table) FindColumn(name string) int {
 	return -1
 }
 
-func (ta *Table) GetPKColumn(index int) *TableColumn {
+/*func (ta *Table) GetPKColumn(index int) *TableColumn {
 	return &ta.Columns[ta.PKColumns[index]]
 }
 
@@ -191,12 +191,12 @@ func (ta *Table) AddIndex(name string) (index *Index) {
 	index = NewIndex(name)
 	ta.Indexes = append(ta.Indexes, index)
 	return index
-}
+}*/
 
-func NewIndex(name string) *Index {
+/*func NewIndex(name string) *Index {
 	return &Index{name, make([]string, 0, 8), make([]uint64, 0, 8), 0}
 }
-
+*/
 func (idx *Index) AddColumn(name string, cardinality uint64) {
 	idx.Columns = append(idx.Columns, name)
 	if cardinality == 0 {
@@ -229,16 +229,16 @@ func NewTableFromSqlDB(conn *sql.DB, schema string, name string) (*Table, error)
 		Schema:  schema,
 		Name:    name,
 		Columns: make([]TableColumn, 0, 16),
-		Indexes: make([]*Index, 0, 8),
+		//Indexes: make([]*Index, 0, 8),
 	}
 
 	if err := ta.fetchColumnsViaSqlDB(conn); err != nil {
 		return nil, errors.Trace(err)
 	}
 
-	if err := ta.fetchIndexesViaSqlDB(conn); err != nil {
+	/*if err := ta.fetchIndexesViaSqlDB(conn); err != nil {
 		return nil, errors.Trace(err)
-	}
+	}*/
 
 	return ta, nil
 }
@@ -248,16 +248,16 @@ func NewTable(conn mysql.Executer, schema string, name string) (*Table, error) {
 		Schema:  schema,
 		Name:    name,
 		Columns: make([]TableColumn, 0, 16),
-		Indexes: make([]*Index, 0, 8),
+		//Indexes: make([]*Index, 0, 8),
 	}
 
 	if err := ta.fetchColumns(conn); err != nil {
 		return nil, errors.Trace(err)
 	}
 
-	if err := ta.fetchIndexes(conn); err != nil {
+	/*if err := ta.fetchIndexes(conn); err != nil {
 		return nil, errors.Trace(err)
-	}
+	}*/
 
 	return ta, nil
 }
@@ -304,7 +304,7 @@ func (ta *Table) fetchColumnsViaSqlDB(conn *sql.DB) error {
 	return r.Err()
 }
 
-func (ta *Table) fetchIndexes(conn mysql.Executer) error {
+/*func (ta *Table) fetchIndexes(conn mysql.Executer) error {
 	r, err := conn.Execute(fmt.Sprintf("show index from `%s`.`%s`", ta.Schema, ta.Name))
 	if err != nil {
 		return errors.Trace(err)
@@ -325,9 +325,9 @@ func (ta *Table) fetchIndexes(conn mysql.Executer) error {
 	}
 
 	return ta.fetchPrimaryKeyColumns()
-}
+}*/
 
-func (ta *Table) fetchIndexesViaSqlDB(conn *sql.DB) error {
+/*func (ta *Table) fetchIndexesViaSqlDB(conn *sql.DB) error {
 	r, err := conn.Query(fmt.Sprintf("show index from `%s`.`%s`", ta.Schema, ta.Name))
 	if err != nil {
 		return errors.Trace(err)
@@ -379,7 +379,7 @@ func (ta *Table) fetchIndexesViaSqlDB(conn *sql.DB) error {
 	}
 
 	return ta.fetchPrimaryKeyColumns()
-}
+}*/
 
 func toUint64(i interface{}) uint64 {
 	switch i := i.(type) {
@@ -408,7 +408,7 @@ func toUint64(i interface{}) uint64 {
 	return 0
 }
 
-func (ta *Table) fetchPrimaryKeyColumns() error {
+/*func (ta *Table) fetchPrimaryKeyColumns() error {
 	if len(ta.Indexes) == 0 {
 		return nil
 	}
@@ -443,7 +443,7 @@ func (ta *Table) GetPKValues(row []interface{}) ([]interface{}, error) {
 	}
 
 	return values, nil
-}
+}*/
 
 // GetColumnValue gets term column's value
 func (ta *Table) GetColumnValue(column string, row []interface{}) (interface{}, error) {
