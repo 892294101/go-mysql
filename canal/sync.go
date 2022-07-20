@@ -150,8 +150,7 @@ func (c *Canal) runSyncBinlog() error {
 				return errors.Trace(err)
 			}
 		case *replication.QueryEvent:
-			fmt.Println("RAW SQL: --------------: ", string(e.Query))
-
+			// 过滤不要的drop操作（过滤drop历史表和全局临时表）
 			if FilterOther(e.Query) {
 				c.cfg.Logger.Errorf("parse query(%s), This event will be skipped normally", e.Query)
 				continue
