@@ -8,7 +8,6 @@ import (
 
 	"github.com/892294101/go-mysql/mysql"
 	"github.com/892294101/go-mysql/replication"
-	"github.com/892294101/go-mysql/schema"
 	"github.com/892294101/parser/ast"
 	"github.com/google/uuid"
 )
@@ -117,9 +116,7 @@ func (c *Canal) runSyncBinlog() error {
 			if err != nil {
 				e := errors.Cause(err)
 				// if error is not ErrExcludedTable or ErrTableNotExist or ErrMissingTableMeta, stop canal
-				if e != ErrExcludedTable &&
-					e != schema.ErrTableNotExist &&
-					e != schema.ErrMissingTableMeta {
+				if e != ErrExcludedTable {
 					c.cfg.Logger.Errorf("handle rows event at (%s, %d) error %v", pos.Name, curPos, err)
 					return errors.Trace(err)
 				}
@@ -173,10 +170,6 @@ func (c *Canal) runSyncBinlog() error {
 					for _, node := range vNodes {
 						if node.db == "" {
 							node.db = string(e.Schema)
-						}
-						// insert时会把表信息放入缓存内, 而当表结构发生变化时则要删除它.
-						if err = c.updateTable(node.db, node.table); err != nil {
-							return errors.Trace(err)
 						}
 					}
 					if len(vNodes) > 0 {
@@ -297,14 +290,6 @@ func parseStmt(stmt ast.StmtNode) (res interface{}) {
 	return ns
 }
 
-func (c *Canal) updateTable(db, table string) (err error) {
-	c.ClearTableCache([]byte(db), []byte(table))
-	c.cfg.Logger.Infof("table structure changed, clear table cache: %s.%s\n", db, table)
-	if err = c.eventHandler.OnTableChanged(db, table); err != nil && errors.Cause(err) != schema.ErrTableNotExist {
-		return errors.Trace(err)
-	}
-	return
-}
 func (c *Canal) updateReplicationDelay(ev *replication.BinlogEvent) {
 	var newDelay uint32
 	now := uint32(time.Now().Unix())
