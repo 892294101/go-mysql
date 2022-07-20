@@ -10,7 +10,6 @@ type EventHandler interface {
 	// OnTableChanged is called when the table is created, altered, renamed or dropped.
 	// You need to clear the associated data like cache with the table.
 	// It will be called before OnDDL.
-	OnTableChanged(schema string, table string) error
 	OnRow(e *RowsEvent) error
 	OnXID(nextPos mysql.Position) error
 	OnGTID(gtid mysql.GTIDSet) error
