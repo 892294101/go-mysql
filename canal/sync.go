@@ -317,14 +317,6 @@ func (c *Canal) updateReplicationDelay(ev *replication.BinlogEvent) {
 func (c *Canal) handleRowsEvent(e *replication.BinlogEvent) error {
 	ev := e.Event.(*replication.RowsEvent)
 
-	// Caveat: table may be altered at runtime.
-	schema := string(ev.Table.Schema)
-	table := string(ev.Table.Table)
-
-	t, err := c.GetTable(schema, table)
-	if err != nil {
-		return err
-	}
 	var action string
 	switch e.Header.EventType {
 	case replication.WRITE_ROWS_EVENTv1, replication.WRITE_ROWS_EVENTv2:
@@ -336,7 +328,7 @@ func (c *Canal) handleRowsEvent(e *replication.BinlogEvent) error {
 	default:
 		return errors.Errorf("%s not supported now", e.Header.EventType)
 	}
-	events := newRowsEvent(t, action, ev.Rows, e.Header)
+	events := newRowsEvent(action, ev, e.Header)
 	return c.eventHandler.OnRow(events)
 }
 

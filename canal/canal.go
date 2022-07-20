@@ -3,8 +3,6 @@ package canal
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -77,10 +75,6 @@ func NewCanal(cfg *Config) (*Canal, error) {
 
 	var err error
 
-	if err = c.prepareDumper(); err != nil {
-		return nil, errors.Trace(err)
-	}
-
 	if err = c.prepareSyncer(); err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -119,60 +113,6 @@ func NewCanal(cfg *Config) (*Canal, error) {
 	return c, nil
 }
 
-func (c *Canal) prepareDumper() error {
-	var err error
-	dumpPath := c.cfg.Dump.ExecutionPath
-	if len(dumpPath) == 0 {
-		// ignore mysqldump, use binlog only
-		return nil
-	}
-
-	if c.dumper, err = dump.NewDumper(dumpPath,
-		c.cfg.Addr, c.cfg.User, c.cfg.Password); err != nil {
-		return errors.Trace(err)
-	}
-
-	if c.dumper == nil {
-		//no mysqldump, use binlog only
-		return nil
-	}
-
-	dbs := c.cfg.Dump.Databases
-	tables := c.cfg.Dump.Tables
-	tableDB := c.cfg.Dump.TableDB
-
-	if len(tables) == 0 {
-		c.dumper.AddDatabases(dbs...)
-	} else {
-		c.dumper.AddTables(tableDB, tables...)
-	}
-
-	charset := c.cfg.Charset
-	c.dumper.SetCharset(charset)
-
-	c.dumper.SetWhere(c.cfg.Dump.Where)
-	c.dumper.SkipMasterData(c.cfg.Dump.SkipMasterData)
-	c.dumper.SetMaxAllowedPacket(c.cfg.Dump.MaxAllowedPacketMB)
-	c.dumper.SetProtocol(c.cfg.Dump.Protocol)
-	c.dumper.SetExtraOptions(c.cfg.Dump.ExtraOptions)
-	// Use hex blob for mysqldump
-	c.dumper.SetHexBlob(true)
-
-	for _, ignoreTable := range c.cfg.Dump.IgnoreTables {
-		if seps := strings.Split(ignoreTable, ","); len(seps) == 2 {
-			c.dumper.AddIgnoreTables(seps[0], seps[1])
-		}
-	}
-
-	if c.cfg.Dump.DiscardErr {
-		c.dumper.SetErrOut(ioutil.Discard)
-	} else {
-		c.dumper.SetErrOut(os.Stderr)
-	}
-
-	return nil
-}
-
 func (c *Canal) GetDelay() uint32 {
 	return atomic.LoadUint32(c.delay)
 }
@@ -197,34 +137,12 @@ func (c *Canal) StartFromGTID(set mysql.GTIDSet) error {
 	return c.Run()
 }
 
-// Dump all data from MySQL master `mysqldump`, ignore sync binlog.
-func (c *Canal) Dump() error {
-	if c.dumped {
-		return errors.New("the method Dump can't be called twice")
-	}
-	c.dumped = true
-	defer close(c.dumpDoneCh)
-	return c.dump()
-}
-
 func (c *Canal) run() error {
 	defer func() {
 		c.cancel()
 	}()
 
 	c.master.UpdateTimestamp(uint32(time.Now().Unix()))
-
-	if !c.dumped {
-		c.dumped = true
-
-		err := c.tryDump()
-		close(c.dumpDoneCh)
-
-		if err != nil {
-			c.cfg.Logger.Errorf("canal dump mysql err: %v", err)
-			return errors.Trace(err)
-		}
-	}
 
 	if err := c.runSyncBinlog(); err != nil {
 		if errors.Cause(err) != context.Canceled {

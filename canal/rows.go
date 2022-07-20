@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/892294101/go-mysql/replication"
-	"github.com/892294101/go-mysql/schema"
 )
 
 // The action name for sync.
@@ -16,24 +15,21 @@ const (
 
 // RowsEvent is the event for row replication.
 type RowsEvent struct {
-	Table  *schema.Table
 	Action string
 	// changed row list
 	// binlog has three update event version, v0, v1 and v2.
 	// for v1 and v2, the rows number must be even.
 	// Two rows for one event, format is [before update row, after update row]
 	// for update v0, only one row for a event, and we don't support this version.
-	Rows [][]interface{}
+	Rows *replication.RowsEvent
 	// Header can be used to inspect the event
 	Header *replication.EventHeader
 }
 
-func newRowsEvent(table *schema.Table, action string, rows [][]interface{}, header *replication.EventHeader) *RowsEvent {
+func newRowsEvent(action string, rowEvent *replication.RowsEvent, header *replication.EventHeader) *RowsEvent {
 	e := new(RowsEvent)
-
-	e.Table = table
 	e.Action = action
-	e.Rows = rows
+	e.Rows = rowEvent
 	e.Header = header
 
 	//e.handleUnsigned()
@@ -80,5 +76,5 @@ const maxMediumintUnsigned int32 = 16777215
 
 // String implements fmt.Stringer interface.
 func (r *RowsEvent) String() string {
-	return fmt.Sprintf("%s %s %v", r.Action, r.Table, r.Rows)
+	return fmt.Sprintf("%s %v %v", r.Action, r.Header, r.Rows)
 }

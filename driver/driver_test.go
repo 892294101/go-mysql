@@ -86,7 +86,7 @@ func TestParseDSN(t *testing.T) {
 	// Use different numbered domains to more readily see what has failed - since we
 	// test in a loop we get the same line number on error
 	testDSNs := map[string]connInfo{
-		"user:password@localhost?db": {standardDSN: false, addr: "localhost", user: "user", password: "password", db: "db", params: url.Values{}},
+		"user:password@localhost?db":                 {standardDSN: false, addr: "localhost", user: "user", password: "password", db: "db", params: url.Values{}},
 		"user@1.domain.com?db":                       {standardDSN: false, addr: "1.domain.com", user: "user", password: "", db: "db", params: url.Values{}},
 		"user:password@2.domain.com/db":              {standardDSN: true, addr: "2.domain.com", user: "user", password: "password", db: "db", params: url.Values{}},
 		"user:password@3.domain.com/db?ssl=true":     {standardDSN: true, addr: "3.domain.com", user: "user", password: "password", db: "db", params: url.Values{"ssl": []string{"true"}}},
