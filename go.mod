@@ -3,7 +3,7 @@ module github.com/892294101/go-mysql
 go 1.15
 
 require (
-	github.com/892294101/go-mysql v1.1.3
+	github.com/892294101/go-mysql v1.1.4
 	github.com/892294101/parser v0.0.0-20220705174247-7e3b2232c99f // indirect
 	github.com/BurntSushi/toml v0.3.1
 	github.com/go-sql-driver/mysql v1.6.0

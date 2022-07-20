@@ -84,10 +84,6 @@ func (c *Canal) runSyncBinlog() error {
 		savePos = false
 		force = false
 		pos := c.master.Position()
-
-		curPos := pos.Pos
-
-		// next binlog pos
 		pos.Pos = ev.Header.LogPos
 
 		// new file name received in the fake rotate event
@@ -110,18 +106,11 @@ func (c *Canal) runSyncBinlog() error {
 				return errors.Trace(err)
 			}
 		case *replication.RowsEvent:
-
-			// we only focus row based event
 			err = c.handleRowsEvent(ev)
 			if err != nil {
-				e := errors.Cause(err)
-				// if error is not ErrExcludedTable or ErrTableNotExist or ErrMissingTableMeta, stop canal
-				if e != ErrExcludedTable {
-					c.cfg.Logger.Errorf("handle rows event at (%s, %d) error %v", pos.Name, curPos, err)
-					return errors.Trace(err)
-				}
+				return errors.Trace(err)
+
 			}
-			continue
 		case *replication.XIDEvent:
 			savePos = true
 			// try to save the position later

@@ -21,7 +21,7 @@ type RowsEvent struct {
 	// for v1 and v2, the rows number must be even.
 	// Two rows for one event, format is [before update row, after update row]
 	// for update v0, only one row for a event, and we don't support this version.
-	Rows *replication.RowsEvent
+	RowsEvent *replication.RowsEvent
 	// Header can be used to inspect the event
 	Header *replication.EventHeader
 }
@@ -29,7 +29,7 @@ type RowsEvent struct {
 func newRowsEvent(action string, rowEvent *replication.RowsEvent, header *replication.EventHeader) *RowsEvent {
 	e := new(RowsEvent)
 	e.Action = action
-	e.Rows = rowEvent
+	e.RowsEvent = rowEvent
 	e.Header = header
 
 	//e.handleUnsigned()
@@ -76,5 +76,5 @@ const maxMediumintUnsigned int32 = 16777215
 
 // String implements fmt.Stringer interface.
 func (r *RowsEvent) String() string {
-	return fmt.Sprintf("%s %v %v", r.Action, r.Header, r.Rows)
+	return fmt.Sprintf("%s %v %v", r.Action, r.Header, r.RowsEvent)
 }
