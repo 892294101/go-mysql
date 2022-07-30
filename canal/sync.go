@@ -197,16 +197,28 @@ func (c *Canal) runSyncBinlog() error {
 					}
 				// +++++++++++++++++++++ INDEX DDL(CREATE SEQUENCE、DROP SEQUENCE、ALTER SEQUENCE)
 				case *ast.CreateSequenceStmt, *ast.DropSequenceStmt, *ast.AlterSequenceStmt:
+					savePos = true
+					force = true
 					if err = c.eventHandler.OnSequenceDDL(pos, e, tabSmt); err != nil {
 						return errors.Trace(err)
 					}
 				// +++++++++++++++++++++ USER ROLE DDL(CREATE USER、ALTER USER、DROP USER、RENAME USER、GRANT PROXY、GRANT ROLE、GRANT STMT)
 				case *ast.CreateUserStmt, *ast.AlterUserStmt, *ast.DropUserStmt, *ast.RenameUserStmt:
+					savePos = true
+					force = true
 					if err = c.eventHandler.OnUserDDL(pos, e, tabSmt); err != nil {
 						return errors.Trace(err)
 					}
 				case *ast.GrantProxyStmt, *ast.GrantRoleStmt, *ast.GrantStmt:
+					savePos = true
+					force = true
 					if err = c.eventHandler.OnGrantDDL(pos, e, tabSmt); err != nil {
+						return errors.Trace(err)
+					}
+				case *ast.BeginStmt, *ast.CommitStmt:
+					savePos = true
+					force = true
+					if err = c.eventHandler.OnTransaction(pos, e, tabSmt); err != nil {
 						return errors.Trace(err)
 					}
 				}

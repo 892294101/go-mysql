@@ -24,6 +24,7 @@ type EventHandler interface {
 	OnSequenceDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, sDDL interface{}) error
 	OnUserDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, uDDL interface{}) error
 	OnGrantDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, gDDL interface{}) error
+	OnTransaction(nextPos mysql.Position, queryEvent *replication.QueryEvent, gDDL interface{}) error
 }
 
 type DummyEventHandler struct{}
