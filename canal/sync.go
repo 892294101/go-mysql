@@ -3,6 +3,7 @@ package canal
 import (
 	"fmt"
 	"github.com/pingcap/errors"
+	"os"
 	"sync/atomic"
 	"time"
 
@@ -60,6 +61,7 @@ func (c *Canal) runSyncBinlog() error {
 
 	for {
 		ev, err := s.GetEvent(c.ctx)
+		
 		if err != nil {
 			return errors.Trace(err)
 		}
@@ -229,6 +231,10 @@ func (c *Canal) runSyncBinlog() error {
 				c.master.UpdateGTIDSet(e.GSet)
 			}
 		default:
+			e.
+			fmt.Printf("continue:")
+			e.Dump(os.Stdout)
+			fmt.Printf("\n")
 			continue
 		}
 
