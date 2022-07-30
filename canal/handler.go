@@ -57,6 +57,10 @@ func (h *DummyEventHandler) OnGrantDDL(nextPos mysql.Position, queryEvent *repli
 	return nil
 }
 
+func (h *DummyEventHandler) OnTransaction(nextPos mysql.Position, queryEvent *replication.QueryEvent, gDDL interface{}) error {
+	return nil
+}
+
 func (h *DummyEventHandler) OnRotate(*replication.RotateEvent) error               { return nil }
 func (h *DummyEventHandler) OnTableChanged(schema string, table string) error      { return nil }
 func (h *DummyEventHandler) OnRow(*RowsEvent) error                                { return nil }
