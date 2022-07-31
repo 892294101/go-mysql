@@ -17,13 +17,14 @@ type EventHandler interface {
 	OnPosSynced(pos mysql.Position, set mysql.GTIDSet, force bool) error
 	String() string
 
-	OnTableDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, tabDDL interface{}) error
-	OnDataBaseDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, dbDDL interface{}) error
-	OnIndexDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, iDDL interface{}) error
-	OnViewDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, vDDL interface{}) error
-	OnSequenceDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, sDDL interface{}) error
-	OnUserDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, uDDL interface{}) error
-	OnGrantDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, gDDL interface{}) error
+	OnTableDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error
+	OnDataBaseDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error
+	OnIndexDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error
+	OnViewDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error
+	OnSequenceDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error
+	OnUserDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error
+	OnGrantDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error
+	OnTransaction(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error
 }
 
 type DummyEventHandler struct{}
@@ -36,23 +37,27 @@ func (h *DummyEventHandler) OnDataBaseDDL(nextPos mysql.Position, queryEvent *re
 	return nil
 }
 
-func (h *DummyEventHandler) OnIndexDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, iDDL interface{}) error {
+func (h *DummyEventHandler) OnIndexDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error {
 	return nil
 }
 
-func (h *DummyEventHandler) OnViewDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, vDDL interface{}) error {
+func (h *DummyEventHandler) OnViewDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error {
 	return nil
 }
 
-func (h *DummyEventHandler) OnSequenceDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, sDDL interface{}) error {
+func (h *DummyEventHandler) OnSequenceDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error {
 	return nil
 }
 
-func (h *DummyEventHandler) OnUserDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, uDDL interface{}) error {
+func (h *DummyEventHandler) OnUserDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error {
 	return nil
 }
 
-func (h *DummyEventHandler) OnGrantDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, gDDL interface{}) error {
+func (h *DummyEventHandler) OnTransaction(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error {
+	return nil
+}
+
+func (h *DummyEventHandler) OnGrantDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error {
 	return nil
 }
 
