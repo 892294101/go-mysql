@@ -110,7 +110,6 @@ func (c *Canal) runSyncBinlog() error {
 			err = c.handleRowsEvent(ev)
 			if err != nil {
 				return errors.Trace(err)
-
 			}
 		case *replication.XIDEvent:
 			savePos = true
@@ -176,34 +175,47 @@ func (c *Canal) runSyncBinlog() error {
 				switch tabSmt := stmt.(type) {
 				// +++++++++++++++++++++ DATABASE DDL(CREATE DATABASE、ALTER DATABASE、DROP DATABASE)
 				case *ast.CreateDatabaseStmt, *ast.DropDatabaseStmt, *ast.AlterDatabaseStmt:
+					savePos = true
+					force = true
 					if err = c.eventHandler.OnDataBaseDDL(pos, e, tabSmt); err != nil {
 						return errors.Trace(err)
 					}
 				// +++++++++++++++++++++ INDEX DDL(CREATE INDEX、DROP INDEX)
 				case *ast.CreateIndexStmt, *ast.DropIndexStmt:
+					savePos = true
+					force = true
 					if err = c.eventHandler.OnIndexDDL(pos, e, tabSmt); err != nil {
 						return errors.Trace(err)
 					}
 				// +++++++++++++++++++++ VIEW DDL(CREATE VIEW)
 				case *ast.CreateViewStmt:
+					savePos = true
+					force = true
 					if err = c.eventHandler.OnViewDDL(pos, e, tabSmt); err != nil {
 						return errors.Trace(err)
 					}
 				// +++++++++++++++++++++ INDEX DDL(CREATE SEQUENCE、DROP SEQUENCE、ALTER SEQUENCE)
 				case *ast.CreateSequenceStmt, *ast.DropSequenceStmt, *ast.AlterSequenceStmt:
+					savePos = true
+					force = true
 					if err = c.eventHandler.OnSequenceDDL(pos, e, tabSmt); err != nil {
 						return errors.Trace(err)
 					}
 				// +++++++++++++++++++++ USER ROLE DDL(CREATE USER、ALTER USER、DROP USER、RENAME USER、GRANT PROXY、GRANT ROLE、GRANT STMT)
 				case *ast.CreateUserStmt, *ast.AlterUserStmt, *ast.DropUserStmt, *ast.RenameUserStmt:
+					savePos = true
+					force = true
 					if err = c.eventHandler.OnUserDDL(pos, e, tabSmt); err != nil {
 						return errors.Trace(err)
 					}
 				case *ast.GrantProxyStmt, *ast.GrantRoleStmt, *ast.GrantStmt:
+					savePos = true
+					force = true
 					if err = c.eventHandler.OnGrantDDL(pos, e, tabSmt); err != nil {
 						return errors.Trace(err)
 					}
 				case *ast.BeginStmt, *ast.CommitStmt:
+					// 不可立即更新postion，因为begin和commit不算是一个整的事务
 					if err = c.eventHandler.OnTransaction(pos, e, tabSmt); err != nil {
 						return errors.Trace(err)
 					}
