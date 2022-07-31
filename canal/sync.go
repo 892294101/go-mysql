@@ -115,7 +115,7 @@ func (c *Canal) runSyncBinlog() error {
 		case *replication.XIDEvent:
 			savePos = true
 			// try to save the position later
-			if err := c.eventHandler.OnXID(pos); err != nil {
+			if err := c.eventHandler.OnXID(pos,e); err != nil {
 				return errors.Trace(err)
 			}
 			if e.GSet != nil {
@@ -216,7 +216,7 @@ func (c *Canal) runSyncBinlog() error {
 					if err = c.eventHandler.OnGrantDDL(pos, e, tabSmt); err != nil {
 						return errors.Trace(err)
 					}
-				case *ast.BeginStmt,*ast.CommitStmt:
+				case *ast.BeginStmt, *ast.CommitStmt:
 					savePos = true
 					force = true
 					if err = c.eventHandler.OnTransaction(pos, e, tabSmt); err != nil {
