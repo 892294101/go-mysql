@@ -3,7 +3,6 @@ package canal
 import (
 	"fmt"
 	"github.com/pingcap/errors"
-	"os"
 	"sync/atomic"
 	"time"
 
@@ -116,7 +115,7 @@ func (c *Canal) runSyncBinlog() error {
 		case *replication.XIDEvent:
 			savePos = true
 			// try to save the position later
-			if err := c.eventHandler.OnXID(pos,e); err != nil {
+			if err := c.eventHandler.OnXID(pos, e); err != nil {
 				return errors.Trace(err)
 			}
 			if e.GSet != nil {
@@ -141,7 +140,6 @@ func (c *Canal) runSyncBinlog() error {
 				return errors.Trace(err)
 			}
 		case *replication.QueryEvent:
-			fmt.Printf("e.Query: %s\n", e.Query)
 			// 过滤不要的drop操作（过滤drop历史表和全局临时表）
 			if FilterOther(e.Query) {
 				c.cfg.Logger.Errorf("parse query(%s), This event will be skipped normally", e.Query)
@@ -231,9 +229,6 @@ func (c *Canal) runSyncBinlog() error {
 				c.master.UpdateGTIDSet(e.GSet)
 			}
 		default:
-			fmt.Printf("continue:")
-			e.Dump(os.Stdout)
-			fmt.Printf("\n")
 			continue
 		}
 
