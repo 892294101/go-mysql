@@ -216,7 +216,7 @@ func (c *Canal) runSyncBinlog() error {
 					if err = c.eventHandler.OnGrantDDL(pos, e, tabSmt); err != nil {
 						return errors.Trace(err)
 					}
-				case *ast.BeginStmt:
+				case *ast.BeginStmt,*ast.CommitStmt:
 					savePos = true
 					force = true
 					if err = c.eventHandler.OnTransaction(pos, e, tabSmt); err != nil {
