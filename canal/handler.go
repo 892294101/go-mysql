@@ -58,12 +58,12 @@ func (h *DummyEventHandler) OnGrantDDL(nextPos mysql.Position, queryEvent *repli
 	return nil
 }
 
-func (h *DummyEventHandler) OnRotate(*replication.RotateEvent) error               { return nil }
-func (h *DummyEventHandler) OnRow(*RowsEvent) error                                { return nil }
-func (h *DummyEventHandler) OnXID(pos mysql.Position) error                        { return nil }
-func (h *DummyEventHandler) OnGTID(mysql.GTIDSet, *replication.XIDEvent) error     { return nil }
-func (h *DummyEventHandler) OnPosSynced(mysql.Position, mysql.GTIDSet, bool) error { return nil }
-func (h *DummyEventHandler) String() string                                        { return "DummyEventHandler" }
+func (h *DummyEventHandler) OnRotate(*replication.RotateEvent) error                   { return nil }
+func (h *DummyEventHandler) OnRow(*RowsEvent) error                                    { return nil }
+func (h *DummyEventHandler) OnXID(pos mysql.Position, xid *replication.XIDEvent) error { return nil }
+func (h *DummyEventHandler) OnGTID(mysql.GTIDSet) error                                { return nil }
+func (h *DummyEventHandler) OnPosSynced(mysql.Position, mysql.GTIDSet, bool) error     { return nil }
+func (h *DummyEventHandler) String() string                                            { return "DummyEventHandler" }
 
 // `SetEventHandler` registers the sync handler, you must register your
 // own handler before starting Canal.
