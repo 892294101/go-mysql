@@ -147,7 +147,7 @@ const (
 	GIS_MULTIPOINT
 	GIS_MULTILINESTRING
 	GIS_MULTIPOLYGON
-	GIS_GEOMETRYCOLLECTION
+	GIS_GEOMETRYCOLLECTION // mysql 5.7 可用：geometrycollection； 8.0可用：geometrycollection、geomcollection。 表达式不同，但都是他同一个类型
 )
 
 const (
