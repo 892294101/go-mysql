@@ -470,7 +470,7 @@ func (e *TableMapEvent) Dump(w io.Writer) {
 		if e.IsNumericColumn(i) {
 			if len(unsignedMap) == 0 {
 				fmt.Fprintf(w, "  unsigned=<n/a>")
-			} else if unsignedMap[i] {
+			} else if unsignedMap[i] == 1 {
 				fmt.Fprintf(w, "  unsigned=yes")
 			} else {
 				fmt.Fprintf(w, "  unsigned=no ")
@@ -546,6 +546,22 @@ func (e *TableMapEvent) Nullable(i int) (available, nullable bool) {
 	return true, e.NullBitmap[i/8]&(1<<uint(i%8)) != 0
 }
 
+// 提取是否可为空的列
+func (e *TableMapEvent) NullableMap() map[int]int32 {
+	rn := make(map[int]int32)
+	for i := 0; i < int(e.ColumnCount); i++ {
+		available, nullable := e.Nullable(i)
+		if !available {
+			return nil
+		} else if nullable {
+			rn[i] = 1
+		} else {
+			rn[i] = 0
+		}
+	}
+	return rn
+}
+
 // SetStrValueString returns values for set columns as string slices.
 // nil is returned if not available or no set columns at all.
 func (e *TableMapEvent) SetStrValueString() [][]string {
@@ -605,17 +621,23 @@ func (e *TableMapEvent) bytesSlice2StrSlice(src [][]byte) []string {
 // UnsignedMap returns a map: column index -> unsigned.
 // Note that only numeric columns will be returned.
 // nil is returned if not available or no numeric columns at all.
-func (e *TableMapEvent) UnsignedMap() map[int]bool {
+func (e *TableMapEvent) UnsignedMap() map[int]int32 {
 	if len(e.SignednessBitmap) == 0 {
 		return nil
 	}
 	p := 0
-	ret := make(map[int]bool)
+	ret := make(map[int]int32)
 	for i := 0; i < int(e.ColumnCount); i++ {
 		if !e.IsNumericColumn(i) {
 			continue
 		}
-		ret[i] = e.SignednessBitmap[p/8]&(1<<uint(7-p%8)) != 0
+
+		if e.SignednessBitmap[p/8]&(1<<uint(7-p%8)) != 0 {
+			ret[i] = 1
+		} else {
+			ret[i] = 0
+		}
+
 		p++
 	}
 	return ret
