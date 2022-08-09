@@ -710,44 +710,6 @@ func (e *TableMapEvent) EnumStrValueMap() map[int][]string {
 	return e.strValueMap(e.IsEnumColumn, e.EnumStrValueString())
 }
 
-func (e *TableMapEvent) PutCharsetList() {
-	for i := 0; i < int(e.ColumnCount); i++ {
-		ok := e.IsCharacterColumn(i)
-		var ind int
-		if ok {
-			fmt.Println("IsCharacterColumn:===============", e.columnNameString[i])
-			ind++
-		}
-
-		ok = e.IsEnumColumn(i)
-		if ok {
-			fmt.Println("     IsEnumColumn:===============", e.columnNameString[i])
-		}
-
-		ok = e.IsSetColumn(i)
-		if ok {
-			fmt.Println("      IsSetColumn:===============", e.columnNameString[i])
-		}
-
-		ok = e.IsNumericColumn(i)
-		if ok {
-			fmt.Println("  IsNumericColumn:===============", e.columnNameString[i])
-		}
-
-		ok = e.IsGeometryColumn(i)
-		if ok {
-			fmt.Println(" IsGeometryColumn:===============", e.columnNameString[i])
-		}
-
-		ok = e.IsTimeColumn(i)
-		if ok {
-			fmt.Println("     IsTimeColumn:===============", e.columnNameString[i])
-		}
-
-	}
-
-}
-
 // SetStrValueMap returns a map: column index -> set string value.
 // Note that only set columns will be returned.
 // nil is returned if not available or no set columns at all.
