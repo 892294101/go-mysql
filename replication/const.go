@@ -225,3 +225,22 @@ const (
 	LAST_INSERT_ID
 	INSERT_ID
 )
+
+const (
+	Existing = 1
+)
+
+const (
+	ValBytes = iota + 1
+	ValInt32
+	ValInt64
+	ValInt8
+	ValInt16
+	ValString
+	ValFloat32
+	ValFloat64
+	ValUint32
+	ValUint64
+	ValTime
+	ValInt
+)

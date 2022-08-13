@@ -470,7 +470,7 @@ func (e *TableMapEvent) Dump(w io.Writer) {
 		if e.IsNumericColumn(i) {
 			if len(unsignedMap) == 0 {
 				fmt.Fprintf(w, "  unsigned=<n/a>")
-			} else if unsignedMap[i] == 1 {
+			} else if unsignedMap[int32(i)] == 1 {
 				fmt.Fprintf(w, "  unsigned=yes")
 			} else {
 				fmt.Fprintf(w, "  unsigned=no ")
@@ -480,40 +480,40 @@ func (e *TableMapEvent) Dump(w io.Writer) {
 			if len(collationMap) == 0 {
 				fmt.Fprintf(w, "  collation=<n/a>")
 			} else {
-				fmt.Fprintf(w, "  collation=%d ", collationMap[i])
+				fmt.Fprintf(w, "  collation=%d ", collationMap[int32(i)])
 			}
 		}
 		if e.IsEnumColumn(i) {
 			if len(enumSetCollationMap) == 0 {
 				fmt.Fprintf(w, "  enum_collation=<n/a>")
 			} else {
-				fmt.Fprintf(w, "  enum_collation=%d", enumSetCollationMap[i])
+				fmt.Fprintf(w, "  enum_collation=%d", enumSetCollationMap[int32(i)])
 			}
 
 			if len(enumStrValueMap) == 0 {
 				fmt.Fprintf(w, "  enum=<n/a>")
 			} else {
-				fmt.Fprintf(w, "  enum=%v", enumStrValueMap[i])
+				fmt.Fprintf(w, "  enum=%v", enumStrValueMap[int32(i)])
 			}
 		}
 		if e.IsSetColumn(i) {
 			if len(enumSetCollationMap) == 0 {
 				fmt.Fprintf(w, "  set_collation=<n/a>")
 			} else {
-				fmt.Fprintf(w, "  set_collation=%d", enumSetCollationMap[i])
+				fmt.Fprintf(w, "  set_collation=%d", enumSetCollationMap[int32(i)])
 			}
 
 			if len(setStrValueMap) == 0 {
 				fmt.Fprintf(w, "  set=<n/a>")
 			} else {
-				fmt.Fprintf(w, "  set=%v", setStrValueMap[i])
+				fmt.Fprintf(w, "  set=%v", setStrValueMap[int32(i)])
 			}
 		}
 		if e.IsGeometryColumn(i) {
 			if len(geometryTypeMap) == 0 {
 				fmt.Fprintf(w, "  geometry_type=<n/a>")
 			} else {
-				fmt.Fprintf(w, "  geometry_type=%v", geometryTypeMap[i])
+				fmt.Fprintf(w, "  geometry_type=%v", geometryTypeMap[int32(i)])
 			}
 		}
 
@@ -547,16 +547,16 @@ func (e *TableMapEvent) Nullable(i int) (available, nullable bool) {
 }
 
 // 提取是否可为空的列
-func (e *TableMapEvent) NullableMap() map[int]int32 {
-	rn := make(map[int]int32)
+func (e *TableMapEvent) NullableMap() map[int32]int32 {
+	rn := make(map[int32]int32)
 	for i := 0; i < int(e.ColumnCount); i++ {
 		available, nullable := e.Nullable(i)
 		if !available {
 			return nil
 		} else if nullable {
-			rn[i] = 1
+			rn[int32(i)] = 1
 		} else {
-			rn[i] = 0
+			rn[int32(i)] = 0
 		}
 	}
 	return rn
@@ -621,21 +621,21 @@ func (e *TableMapEvent) bytesSlice2StrSlice(src [][]byte) []string {
 // UnsignedMap returns a map: column index -> unsigned.
 // Note that only numeric columns will be returned.
 // nil is returned if not available or no numeric columns at all.
-func (e *TableMapEvent) UnsignedMap() map[int]int32 {
+func (e *TableMapEvent) UnsignedMap() map[int32]int32 {
 	if len(e.SignednessBitmap) == 0 {
 		return nil
 	}
 	p := 0
-	ret := make(map[int]int32)
+	ret := make(map[int32]int32)
 	for i := 0; i < int(e.ColumnCount); i++ {
 		if !e.IsNumericColumn(i) {
 			continue
 		}
 
 		if e.SignednessBitmap[p/8]&(1<<uint(7-p%8)) != 0 {
-			ret[i] = 1
+			ret[int32(i)] = 1
 		} else {
-			ret[i] = 0
+			ret[int32(i)] = 0
 		}
 
 		p++
@@ -646,38 +646,38 @@ func (e *TableMapEvent) UnsignedMap() map[int]int32 {
 // CollationMap returns a map: column index -> collation id.
 // Note that only character columns will be returned.
 // nil is returned if not available or no character columns at all.
-func (e *TableMapEvent) CollationMap() map[int]uint64 {
+func (e *TableMapEvent) CollationMap() map[int32]uint64 {
 	return e.collationMap(e.IsCharacterColumn, e.DefaultCharset, e.ColumnCharset)
 }
 
 // EnumSetCollationMap returns a map: column index -> collation id.
 // Note that only enum or set columns will be returned.
 // nil is returned if not available or no enum/set columns at all.
-func (e *TableMapEvent) EnumSetCollationMap() map[int]uint64 {
+func (e *TableMapEvent) EnumSetCollationMap() map[int32]uint64 {
 	return e.collationMap(e.IsEnumOrSetColumn, e.EnumSetDefaultCharset, e.EnumSetColumnCharset)
 }
 
-func (e *TableMapEvent) collationMap(includeType func(int) bool, defaultCharset, columnCharset []uint64) map[int]uint64 {
+func (e *TableMapEvent) collationMap(includeType func(int) bool, defaultCharset, columnCharset []uint64) map[int32]uint64 {
 	if len(defaultCharset) != 0 {
 		defaultCollation := defaultCharset[0]
 
 		// character column index -> collation
-		collations := make(map[int]uint64)
+		collations := make(map[int32]uint64)
 		for i := 1; i < len(defaultCharset); i += 2 {
-			collations[int(defaultCharset[i])] = defaultCharset[i+1]
+			collations[int32(defaultCharset[i])] = defaultCharset[i+1]
 		}
 
 		p := 0
-		ret := make(map[int]uint64)
+		ret := make(map[int32]uint64)
 		for i := 0; i < int(e.ColumnCount); i++ {
 			if !includeType(i) {
 				continue
 			}
 
-			if collation, ok := collations[p]; ok {
-				ret[i] = collation
+			if collation, ok := collations[int32(p)]; ok {
+				ret[int32(i)] = collation
 			} else {
-				ret[i] = defaultCollation
+				ret[int32(i)] = defaultCollation
 			}
 			p++
 		}
@@ -687,13 +687,13 @@ func (e *TableMapEvent) collationMap(includeType func(int) bool, defaultCharset,
 
 	if len(columnCharset) != 0 {
 		p := 0
-		ret := make(map[int]uint64)
+		ret := make(map[int32]uint64)
 		for i := 0; i < int(e.ColumnCount); i++ {
 			if !includeType(i) {
 				continue
 			}
 
-			ret[i] = columnCharset[p]
+			ret[int32(i)] = columnCharset[p]
 			p++
 		}
 
@@ -706,28 +706,28 @@ func (e *TableMapEvent) collationMap(includeType func(int) bool, defaultCharset,
 // EnumStrValueMap returns a map: column index -> enum string value.
 // Note that only enum columns will be returned.
 // nil is returned if not available or no enum columns at all.
-func (e *TableMapEvent) EnumStrValueMap() map[int][]string {
+func (e *TableMapEvent) EnumStrValueMap() map[int32][]string {
 	return e.strValueMap(e.IsEnumColumn, e.EnumStrValueString())
 }
 
 // SetStrValueMap returns a map: column index -> set string value.
 // Note that only set columns will be returned.
 // nil is returned if not available or no set columns at all.
-func (e *TableMapEvent) SetStrValueMap() map[int][]string {
+func (e *TableMapEvent) SetStrValueMap() map[int32][]string {
 	return e.strValueMap(e.IsSetColumn, e.SetStrValueString())
 }
 
-func (e *TableMapEvent) strValueMap(includeType func(int) bool, strValue [][]string) map[int][]string {
+func (e *TableMapEvent) strValueMap(includeType func(int) bool, strValue [][]string) map[int32][]string {
 	if len(strValue) == 0 {
 		return nil
 	}
 	p := 0
-	ret := make(map[int][]string)
+	ret := make(map[int32][]string)
 	for i := 0; i < int(e.ColumnCount); i++ {
 		if !includeType(i) {
 			continue
 		}
-		ret[i] = strValue[p]
+		ret[int32(i)] = strValue[p]
 		p++
 	}
 	return ret
@@ -736,18 +736,18 @@ func (e *TableMapEvent) strValueMap(includeType func(int) bool, strValue [][]str
 // GeometryTypeMap returns a map: column index -> geometry type.
 // Note that only geometry columns will be returned.
 // nil is returned if not available or no geometry columns at all.
-func (e *TableMapEvent) GeometryTypeMap() map[int]uint64 {
+func (e *TableMapEvent) GeometryTypeMap() map[int32]uint64 {
 	if len(e.GeometryType) == 0 {
 		return nil
 	}
 	p := 0
-	ret := make(map[int]uint64)
+	ret := make(map[int32]uint64)
 	for i := 0; i < int(e.ColumnCount); i++ {
 		if !e.IsGeometryColumn(i) {
 			continue
 		}
 
-		ret[i] = e.GeometryType[p]
+		ret[int32(i)] = e.GeometryType[p]
 		p++
 	}
 	return ret
@@ -875,13 +875,65 @@ type RowsEvent struct {
 	ColumnBitmap2 []byte
 
 	//rows: invalid: int64, float64, bool, []byte, string
-	Rows           [][]interface{}
+	Rows           [][]*ColumnValue
 	SkippedColumns [][]int
 
 	parseTime               bool
 	timestampStringLocation *time.Location
 	useDecimal              bool
 	ignoreJSONDecodeErr     bool
+}
+
+type ColumnValue struct {
+	Existing   int       // 值是否存在
+	Length     int       // 列长
+	ColType    byte      // 列的类型
+	PointField int       // 指向字段编码
+	ValBytes   []byte    // 1
+	ValInt32   int32     // 2
+	ValInt64   int64     // 3
+	ValInt8    int8      // 4
+	ValInt16   int16     // 5
+	ValString  string    // 6
+	ValFloat32 float32   // 7
+	ValFloat64 float64   // 8
+	ValUint32  uint32    // 9
+	ValUint64  uint64    // 10
+	ValTime    time.Time // 11
+	ValInt     int       // 12
+}
+
+func (c *ColumnValue) GetColumnValue(w io.Writer) {
+	if c.Existing == Existing {
+		switch c.PointField {
+		case ValString:
+			fmt.Fprintf(w, "%v\n", c.ValString)
+		case ValBytes:
+			fmt.Fprintf(w, "%v\n", c.ValBytes)
+		case ValInt32:
+			fmt.Fprintf(w, "%v\n", c.ValInt32)
+		case ValInt64:
+			fmt.Fprintf(w, "%v\n", c.ValInt64)
+		case ValInt8:
+			fmt.Fprintf(w, "%v\n", c.ValInt8)
+		case ValInt16:
+			fmt.Fprintf(w, "%v\n", c.ValInt16)
+		case ValFloat32:
+			fmt.Fprintf(w, "%v\n", c.ValFloat32)
+		case ValFloat64:
+			fmt.Fprintf(w, "%v\n", c.ValFloat64)
+		case ValUint32:
+			fmt.Fprintf(w, "%v\n", c.ValUint32)
+		case ValUint64:
+			fmt.Fprintf(w, "%v\n", c.ValUint64)
+		case ValTime:
+			fmt.Fprintf(w, "%v\n", c.ValTime)
+		case ValInt:
+			fmt.Fprintf(w, "%v\n", c.ValInt)
+
+		}
+	}
+
 }
 
 func (e *RowsEvent) Decode(data []byte) (err2 error) {
@@ -940,8 +992,7 @@ func (e *RowsEvent) Decode(data []byte) (err2 error) {
 		rowsLen += e.ColumnCount
 	}
 	e.SkippedColumns = make([][]int, 0, rowsLen)
-	e.Rows = make([][]interface{}, 0, rowsLen)
-
+	e.Rows = make([][]*ColumnValue, 0, rowsLen)
 	for pos < len(data) {
 		if n, err = e.decodeRows(data[pos:], e.Table, e.ColumnBitmap1); err != nil {
 			return errors.Trace(err)
@@ -964,7 +1015,8 @@ func isBitSet(bitmap []byte, i int) bool {
 }
 
 func (e *RowsEvent) decodeRows(data []byte, table *TableMapEvent, bitmap []byte) (int, error) {
-	row := make([]interface{}, e.ColumnCount)
+	//row := make([]interface{}, e.ColumnCount)
+	row2 := make([]*ColumnValue, e.ColumnCount)
 	skips := make([]int, 0)
 
 	pos := 0
@@ -983,8 +1035,6 @@ func (e *RowsEvent) decodeRows(data []byte, table *TableMapEvent, bitmap []byte)
 
 	nullbitIndex := 0
 
-	var n int
-	var err error
 	for i := 0; i < int(e.ColumnCount); i++ {
 		if !isBitSet(bitmap, i) {
 			skips = append(skips, i)
@@ -995,42 +1045,46 @@ func (e *RowsEvent) decodeRows(data []byte, table *TableMapEvent, bitmap []byte)
 		nullbitIndex++
 
 		if isNull > 0 {
-			row[i] = nil
+			row2[i] = nil
 			continue
 		}
 
-		row[i], n, err = e.decodeValue(data[pos:], table.ColumnType[i], table.ColumnMeta[i])
-
+		roworg, n, err := e.decodeValue(data[pos:], table.ColumnType[i], table.ColumnMeta[i])
+		//row[i] = roworg
+		row2[i] = roworg
 		if err != nil {
 			return 0, err
 		}
+
 		pos += n
 	}
 
-	e.Rows = append(e.Rows, row)
+	//e.Rows = append(e.Rows, row)
 	e.SkippedColumns = append(e.SkippedColumns, skips)
+	e.Rows = append(e.Rows, row2)
 	return pos, nil
 }
 
-func (e *RowsEvent) parseFracTime(t interface{}) interface{} {
+func (e *RowsEvent) parseFracTime(t interface{}) time.Time {
 	v, ok := t.(fracTime)
 	if !ok {
-		return t
+		return time.Time{}
 	}
 
-	if !e.parseTime {
+	/*if !e.parseTime {
 		// Don't parse time, return string directly
-		return v.String()
-	}
+		return v
+	}*/
 
 	// return Golang time directly
 	return v.Time
 }
 
 // see mysql sql/log_event.cc log_event_print_value
-func (e *RowsEvent) decodeValue(data []byte, tp byte, meta uint16) (v interface{}, n int, err error) {
+func (e *RowsEvent) decodeValue(data []byte, tp byte, meta uint16) (col *ColumnValue, n int, err error) {
+	var v interface{}
+	col = new(ColumnValue)
 	var length = 0
-
 	if tp == MYSQL_TYPE_STRING {
 		if meta >= 256 {
 			b0 := uint8(meta >> 8)
@@ -1053,59 +1107,122 @@ func (e *RowsEvent) decodeValue(data []byte, tp byte, meta uint16) (v interface{
 		return nil, 0, nil
 	case MYSQL_TYPE_LONG:
 		n = 4
-		v = ParseBinaryInt32(data)
+		vr := ParseBinaryInt32(data)
+		col.ValInt32 = vr
+		col.ColType = MYSQL_TYPE_LONG
+		col.Length = n
+		col.Existing = Existing
+		col.PointField = ValInt32
 	case MYSQL_TYPE_TINY:
 		n = 1
-		v = ParseBinaryInt8(data)
+		vr := ParseBinaryInt8(data)
+		col.ValInt8 = vr
+		col.ColType = MYSQL_TYPE_TINY
+		col.Length = n
+		col.Existing = Existing
+		col.PointField = ValInt8
 	case MYSQL_TYPE_SHORT:
 		n = 2
-		v = ParseBinaryInt16(data)
+		vr := ParseBinaryInt16(data)
+		col.ValInt16 = vr
+		col.ColType = MYSQL_TYPE_SHORT
+		col.Length = n
+		col.Existing = Existing
+		col.PointField = ValInt16
 	case MYSQL_TYPE_INT24:
 		n = 3
-		v = ParseBinaryInt24(data)
+		vr := ParseBinaryInt24(data)
+		col.ValInt32 = vr
+		col.ColType = MYSQL_TYPE_INT24
+		col.Length = n
+		col.Existing = Existing
+		col.PointField = ValInt32
 	case MYSQL_TYPE_LONGLONG:
 		n = 8
-		v = ParseBinaryInt64(data)
+		vr := ParseBinaryInt64(data)
+		col.ValInt64 = vr
+		col.ColType = MYSQL_TYPE_LONGLONG
+		col.Length = n
+		col.Existing = Existing
+		col.PointField = ValInt64
 	case MYSQL_TYPE_NEWDECIMAL:
 		prec := uint8(meta >> 8)
 		scale := uint8(meta & 0xFF)
-		v, n, err = decodeDecimal(data, int(prec), int(scale), e.useDecimal)
+		v1, n1, err1 := decodeDecimal(data, int(prec), int(scale), e.useDecimal)
+		n, err = n1, err1
+		col.ValString = v1
+		col.ColType = MYSQL_TYPE_NEWDECIMAL
+		col.Length = n
+		col.Existing = Existing
+		col.PointField = ValString
 	case MYSQL_TYPE_FLOAT:
 		n = 4
-		v = ParseBinaryFloat32(data)
+		v1 := ParseBinaryFloat32(data)
+		col.ValFloat32 = v1
+		col.ColType = MYSQL_TYPE_FLOAT
+		col.Length = n
+		col.Existing = Existing
+		col.PointField = ValFloat32
 	case MYSQL_TYPE_DOUBLE:
 		n = 8
-		v = ParseBinaryFloat64(data)
+		v1 := ParseBinaryFloat64(data)
+		col.ValFloat64 = v1
+		col.ColType = MYSQL_TYPE_DOUBLE
+		col.Length = n
+		col.Existing = Existing
+		col.PointField = ValFloat64
 	case MYSQL_TYPE_BIT:
 		nbits := ((meta >> 8) * 8) + (meta & 0xFF)
 		n = int(nbits+7) / 8
-
 		//use int64 for bit
-		v, err = decodeBit(data, int(nbits), n)
+		var v1 int64
+		v1, err = decodeBit(data, int(nbits), n)
+		col.ValInt64 = v1
+		col.ColType = MYSQL_TYPE_BIT
+		col.Length = n
+		col.Existing = Existing
+		col.PointField = ValInt64
+
 	case MYSQL_TYPE_TIMESTAMP:
 		n = 4
 		t := binary.LittleEndian.Uint32(data)
 		if t == 0 {
-			v = formatZeroTime(0, 0)
+			v1 := formatZeroTime(0, 0)
+			col.ValString = v1
+			col.ColType = MYSQL_TYPE_TIMESTAMP
+			col.Length = n
+			col.Existing = Existing
+			col.PointField = ValString
 		} else {
-			v = e.parseFracTime(fracTime{
-				Time:                    time.Unix(int64(t), 0),
-				Dec:                     0,
-				timestampStringLocation: e.timestampStringLocation,
-			})
+			v1 := e.parseFracTime(fracTime{Time: time.Unix(int64(t), 0), Dec: 0, timestampStringLocation: e.timestampStringLocation})
+			col.ValTime = v1
+			col.ColType = MYSQL_TYPE_TIMESTAMP
+			col.Length = n
+			col.Existing = Existing
+			col.PointField = ValTime
 		}
 	case MYSQL_TYPE_TIMESTAMP2:
 		v, n, err = decodeTimestamp2(data, meta, e.timestampStringLocation)
-		v = e.parseFracTime(v)
+		v1 := e.parseFracTime(v)
+		col.ValTime = v1
+		col.ColType = MYSQL_TYPE_TIMESTAMP2
+		col.Length = n
+		col.Existing = Existing
+		col.PointField = ValTime
 	case MYSQL_TYPE_DATETIME:
 		n = 8
 		i64 := binary.LittleEndian.Uint64(data)
 		if i64 == 0 {
-			v = formatZeroTime(0, 0)
+			v1 := formatZeroTime(0, 0)
+			col.ValString = v1
+			col.ColType = MYSQL_TYPE_DATETIME
+			col.Length = n
+			col.Existing = Existing
+			col.PointField = ValString
 		} else {
 			d := i64 / 1000000
 			t := i64 % 1000000
-			v = e.parseFracTime(fracTime{
+			v1 := e.parseFracTime(fracTime{
 				Time: time.Date(
 					int(d/10000),
 					time.Month((d%10000)/100),
@@ -1118,62 +1235,142 @@ func (e *RowsEvent) decodeValue(data []byte, tp byte, meta uint16) (v interface{
 				),
 				Dec: 0,
 			})
+
+			col.ValTime = v1
+			col.ColType = MYSQL_TYPE_DATETIME
+			col.Length = n
+			col.Existing = Existing
+			col.PointField = ValTime
 		}
 	case MYSQL_TYPE_DATETIME2:
 		v, n, err = decodeDatetime2(data, meta)
-		v = e.parseFracTime(v)
+		v1 := e.parseFracTime(v)
+		col.ValTime = v1
+		col.ColType = MYSQL_TYPE_DATETIME2
+		col.Length = n
+		col.Existing = Existing
+		col.PointField = ValTime
 	case MYSQL_TYPE_TIME:
 		n = 3
 		i32 := uint32(FixedLengthInt(data[0:3]))
 		if i32 == 0 {
-			v = "00:00:00"
+			v1 := "00:00:00"
+			col.ValString = v1
+			col.ColType = MYSQL_TYPE_TIME
+			col.Length = n
+			col.Existing = Existing
+			col.PointField = ValString
 		} else {
-			v = fmt.Sprintf("%02d:%02d:%02d", i32/10000, (i32%10000)/100, i32%100)
+			v1 := fmt.Sprintf("%02d:%02d:%02d", i32/10000, (i32%10000)/100, i32%100)
+			col.ValString = v1
+			col.ColType = MYSQL_TYPE_TIME
+			col.Length = n
+			col.Existing = Existing
+			col.PointField = ValString
 		}
 	case MYSQL_TYPE_TIME2:
-		v, n, err = decodeTime2(data, meta)
+		v1, n, err := decodeTime2(data, meta)
+		v, n, err = v1, n, err
+		col.ValString = v1
+		col.ColType = MYSQL_TYPE_TIME2
+		col.Length = n
+		col.Existing = Existing
+		col.PointField = ValString
+
 	case MYSQL_TYPE_DATE:
 		n = 3
 		i32 := uint32(FixedLengthInt(data[0:3]))
 		if i32 == 0 {
-			v = "0000-00-00"
+			v1 := "0000-00-00"
+			col.ValString = v1
+			col.ColType = MYSQL_TYPE_DATE
+			col.Length = n
+			col.Existing = Existing
+			col.PointField = ValString
 		} else {
-			v = fmt.Sprintf("%04d-%02d-%02d", i32/(16*32), i32/32%16, i32%32)
+			v1 := fmt.Sprintf("%04d-%02d-%02d", i32/(16*32), i32/32%16, i32%32)
+			col.ValString = v1
+			col.ColType = MYSQL_TYPE_DATE
+			col.Length = n
+			col.Existing = Existing
+			col.PointField = ValString
 		}
 
 	case MYSQL_TYPE_YEAR:
 		n = 1
 		year := int(data[0])
 		if year == 0 {
-			v = year
+			v1 := year
+			col.ValInt = v1
+			col.ColType = MYSQL_TYPE_YEAR
+			col.Length = n
+			col.Existing = Existing
+			col.PointField = ValInt
 		} else {
-			v = year + 1900
+			v1 := year + 1900
+			col.ValInt = v1
+			col.ColType = MYSQL_TYPE_YEAR
+			col.Length = n
+			col.Existing = Existing
+			col.PointField = ValInt
 		}
 	case MYSQL_TYPE_ENUM:
 		l := meta & 0xFF
 		switch l {
 		case 1:
-			v = int64(data[0])
+			v1 := int64(data[0])
 			n = 1
+			col.ValInt64 = v1
+			col.ColType = MYSQL_TYPE_ENUM
+			col.Length = n
+			col.Existing = Existing
+			col.PointField = ValInt64
+
 		case 2:
-			v = int64(binary.LittleEndian.Uint16(data))
+			v1 := int64(binary.LittleEndian.Uint16(data))
 			n = 2
+			col.ValInt64 = v1
+			col.ColType = MYSQL_TYPE_ENUM
+			col.Length = n
+			col.Existing = Existing
+			col.PointField = ValInt64
 		default:
 			err = fmt.Errorf("Unknown ENUM packlen=%d", l)
 		}
 	case MYSQL_TYPE_SET:
 		n = int(meta & 0xFF)
 		nbits := n * 8
-
-		v, err = littleDecodeBit(data, nbits, n)
+		var v1 int64
+		v1, err = littleDecodeBit(data, nbits, n)
+		col.ValInt64 = v1
+		col.ColType = MYSQL_TYPE_SET
+		col.Length = n
+		col.Existing = Existing
+		col.PointField = ValInt64
 	case MYSQL_TYPE_BLOB:
-		v, n, err = decodeBlob(data, meta)
-	case MYSQL_TYPE_VARCHAR,
-		MYSQL_TYPE_VAR_STRING:
+		var v1 []byte
+		v1, n, err = decodeBlob(data, meta)
+		col.ValBytes = v1
+		col.ColType = MYSQL_TYPE_BLOB
+		col.Length = n
+		col.Existing = Existing
+		col.PointField = ValBytes
+	case MYSQL_TYPE_VARCHAR, MYSQL_TYPE_VAR_STRING:
 		length = int(meta)
-		v, n = decodeString(data, length)
+		v1, n1 := decodeString(data, length)
+		v, n = v1, n1
+		col.ValString = v1
+		col.ColType = MYSQL_TYPE_VARCHAR | MYSQL_TYPE_VAR_STRING
+		col.Length = n
+		col.Existing = Existing
+		col.PointField = ValString
 	case MYSQL_TYPE_STRING:
-		v, n = decodeString(data, length)
+		v1, n := decodeString(data, length)
+		col.ValString = v1
+		col.ColType = MYSQL_TYPE_STRING
+		col.Length = n
+		col.Existing = Existing
+		col.PointField = ValString
 	case MYSQL_TYPE_JSON:
 		// Refer: https://github.com/shyiko/mysql-binlog-connector-java/blob/master/src/main/java/com/github/shyiko/mysql/binlog/event/deserialization/AbstractRowsEventDataDeserializer.java#L404
 		length = int(FixedLengthInt(data[0:meta]))
@@ -1181,7 +1378,12 @@ func (e *RowsEvent) decodeValue(data []byte, tp byte, meta uint16) (v interface{
 		var d []byte
 		d, err = e.decodeJsonBinary(data[meta:n])
 		if err == nil {
-			v = hack.String(d)
+			v1 := hack.String(d)
+			col.ValString = v1
+			col.ColType = MYSQL_TYPE_JSON
+			col.Length = n
+			col.Existing = Existing
+			col.PointField = ValString
 		}
 	case MYSQL_TYPE_GEOMETRY:
 		// MySQL saves Geometry as Blob in binlog
@@ -1190,12 +1392,18 @@ func (e *RowsEvent) decodeValue(data []byte, tp byte, meta uint16) (v interface{
 		// Refer https://dev.mysql.com/doc/refman/5.7/en/gis-wkb-functions.html
 		// I also find some go libs to handle WKB if possible
 		// see https://github.com/twpayne/go-geom or https://github.com/paulmach/go.geo
-		v, n, err = decodeBlob(data, meta)
+		var v1 []byte
+		v1, n, err = decodeBlob(data, meta)
+		col.ValBytes = v1
+		col.ColType = MYSQL_TYPE_GEOMETRY
+		col.Length = n
+		col.Existing = Existing
+		col.PointField = ValBytes
 	default:
 		err = fmt.Errorf("unsupport type %d in binlog and don't know how to handle", tp)
 	}
 
-	return v, n, err
+	return col, n, err
 }
 
 func decodeString(data []byte, length int) (v string, n int) {
@@ -1236,7 +1444,7 @@ func decodeDecimalDecompressValue(compIndx int, data []byte, mask uint8) (size i
 
 var zeros = [digitsPerInteger]byte{48, 48, 48, 48, 48, 48, 48, 48, 48}
 
-func decodeDecimal(data []byte, precision int, decimals int, useDecimal bool) (interface{}, int, error) {
+func decodeDecimal(data []byte, precision int, decimals int, useDecimal bool) (string, int, error) {
 	//see python mysql replication and https://github.com/jeremycole/mysql_binlog
 	integral := precision - decimals
 	uncompIntegral := integral / digitsPerInteger
@@ -1319,7 +1527,7 @@ func decodeDecimal(data []byte, precision int, decimals int, useDecimal bool) (i
 
 	if useDecimal {
 		f, err := decimal.NewFromString(res.String())
-		return f, pos, err
+		return f.String(), pos, err
 	}
 
 	return res.String(), pos, nil
@@ -1596,12 +1804,12 @@ func (e *RowsEvent) Dump(w io.Writer) {
 
 	fmt.Fprintf(w, "Values:\n")
 	for _, rows := range e.Rows {
-		fmt.Fprintf(w, "--\n")
-		for j, d := range rows {
-			if _, ok := d.([]byte); ok {
-				fmt.Fprintf(w, "%d:%q\n", j, d)
+		for i, column := range rows {
+			if column != nil {
+				fmt.Fprintf(w, "Column ID: %02d ", i)
+				column.GetColumnValue(w)
 			} else {
-				fmt.Fprintf(w, "%d:%#v\n", j, d)
+				fmt.Fprintf(w, "Column ID: %02d NULL\n", i)
 			}
 		}
 	}
