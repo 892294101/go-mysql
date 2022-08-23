@@ -4,15 +4,15 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"io"
-	"strconv"
-	"strings"
-	"time"
-
 	"github.com/pingcap/errors"
 	"github.com/shopspring/decimal"
 	"github.com/siddontang/go-log/log"
 	"github.com/siddontang/go/hack"
+	"io"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
 
 	. "github.com/892294101/go-mysql/mysql"
 )
@@ -963,8 +963,35 @@ func isBitSet(bitmap []byte, i int) bool {
 	return bitmap[i>>3]&(1<<(uint(i)&7)) > 0
 }
 
+type ColumnValueSet struct {
+	CvSet []interface{}
+}
+
+var (
+	ColumnValuePool = sync.Pool{
+		New: func() interface{} {
+			return new(ColumnValueSet)
+		},
+	}
+)
+
+func ColumnValueBufferGet(length int) (data *ColumnValueSet) {
+	data = ColumnValuePool.Get().(*ColumnValueSet)
+	if data.CvSet == nil || cap(data.CvSet) != length {
+		data.CvSet = make([]interface{}, length)
+	}
+	return
+}
+
+func ColumnValueBufferPut(data *ColumnValueSet) {
+	ColumnValuePool.Put(data)
+}
+
 func (e *RowsEvent) decodeRows(data []byte, table *TableMapEvent, bitmap []byte) (int, error) {
-	row := make([]interface{}, e.ColumnCount)
+	//row := make([]interface{}, e.ColumnCount)
+	row := ColumnValueBufferGet(int(e.ColumnCount))
+	defer ColumnValueBufferPut(row) // The purpose is to solve the problem that column data frequently requests memory
+
 	skips := make([]int, 0)
 
 	pos := 0
@@ -995,11 +1022,11 @@ func (e *RowsEvent) decodeRows(data []byte, table *TableMapEvent, bitmap []byte)
 		nullbitIndex++
 
 		if isNull > 0 {
-			row[i] = nil
+			row.CvSet[i] = nil
 			continue
 		}
 
-		row[i], n, err = e.decodeValue(data[pos:], table.ColumnType[i], table.ColumnMeta[i])
+		row.CvSet[i], n, err = e.decodeValue(data[pos:], table.ColumnType[i], table.ColumnMeta[i])
 
 		if err != nil {
 			return 0, err
@@ -1007,7 +1034,7 @@ func (e *RowsEvent) decodeRows(data []byte, table *TableMapEvent, bitmap []byte)
 		pos += n
 	}
 
-	e.Rows = append(e.Rows, row)
+	e.Rows = append(e.Rows, row.CvSet)
 	e.SkippedColumns = append(e.SkippedColumns, skips)
 	return pos, nil
 }
