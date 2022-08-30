@@ -979,6 +979,26 @@ func ColumnValueBufferGet(length int) (data *ColumnValueSet) {
 	data = ColumnValuePool.Get().(*ColumnValueSet)
 	if data.CvSet == nil || cap(data.CvSet) != length {
 		data.CvSet = make([]interface{}, length)
+	} else {
+		for i, i2 := range data.CvSet {
+			switch i2.(type) {
+			case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, uintptr, complex64, complex128:
+				data.CvSet[i] = 0
+			case string:
+				data.CvSet[i] = ""
+			case bool:
+				data.CvSet[i] = false
+			case []byte:
+				data.CvSet[i] = ""
+			case decimal.Decimal:
+				data.CvSet[i] = decimal.Decimal{}
+			case time.Time:
+				data.CvSet[i] = time.Time{}
+			case fracTime:
+				data.CvSet[i] = fracTime{}
+			}
+		}
+
 	}
 	return
 }
