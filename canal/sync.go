@@ -103,11 +103,11 @@ func (c *Canal) runSyncBinlog() error {
 			c.cfg.Logger.Infof("rotate binlog to %s", pos)
 			savePos = true
 			force = true
-			if err = c.eventHandler.OnRotate(e); err != nil {
+			if err = c.eventHandler.OnRotate(e, ev.RawData); err != nil {
 				return errors.Trace(err)
 			}
 		case *replication.RowsEvent:
-			err = c.handleRowsEvent(ev)
+			err = c.handleRowsEvent(ev, ev.RawData)
 			if err != nil {
 				return errors.Trace(err)
 			}
@@ -115,7 +115,7 @@ func (c *Canal) runSyncBinlog() error {
 			savePos = true
 			force = true
 			// try to save the position later
-			if err := c.eventHandler.OnXID(pos, e); err != nil {
+			if err := c.eventHandler.OnXID(pos, e, ev.RawData); err != nil {
 				return errors.Trace(err)
 			}
 			if e.GSet != nil {
@@ -127,7 +127,7 @@ func (c *Canal) runSyncBinlog() error {
 			if err != nil {
 				return errors.Trace(err)
 			}
-			if err := c.eventHandler.OnGTID(gtid); err != nil {
+			if err := c.eventHandler.OnGTID(gtid, ev.RawData); err != nil {
 				return errors.Trace(err)
 			}
 		case *replication.GTIDEvent:
@@ -136,7 +136,7 @@ func (c *Canal) runSyncBinlog() error {
 			if err != nil {
 				return errors.Trace(err)
 			}
-			if err := c.eventHandler.OnGTID(gtid); err != nil {
+			if err := c.eventHandler.OnGTID(gtid, ev.RawData); err != nil {
 				return errors.Trace(err)
 			}
 		case *replication.QueryEvent:
@@ -166,7 +166,7 @@ func (c *Canal) runSyncBinlog() error {
 						force = true
 						switch tabSmt := stmt.(type) {
 						case *ast.CreateTableStmt, *ast.AlterTableStmt, *ast.DropTableStmt, *ast.RenameTableStmt, *ast.TruncateTableStmt:
-							if err = c.eventHandler.OnTableDDL(pos, e, tabSmt); err != nil {
+							if err = c.eventHandler.OnTableDDL(pos, e, tabSmt, ev.RawData); err != nil {
 								return errors.Trace(err)
 							}
 						}
@@ -178,46 +178,46 @@ func (c *Canal) runSyncBinlog() error {
 				case *ast.CreateDatabaseStmt, *ast.DropDatabaseStmt, *ast.AlterDatabaseStmt:
 					savePos = true
 					force = true
-					if err = c.eventHandler.OnDataBaseDDL(pos, e, tabSmt); err != nil {
+					if err = c.eventHandler.OnDataBaseDDL(pos, e, tabSmt, ev.RawData); err != nil {
 						return errors.Trace(err)
 					}
 				// +++++++++++++++++++++ INDEX DDL(CREATE INDEX、DROP INDEX)
 				case *ast.CreateIndexStmt, *ast.DropIndexStmt:
 					savePos = true
 					force = true
-					if err = c.eventHandler.OnIndexDDL(pos, e, tabSmt); err != nil {
+					if err = c.eventHandler.OnIndexDDL(pos, e, tabSmt, ev.RawData); err != nil {
 						return errors.Trace(err)
 					}
 				// +++++++++++++++++++++ VIEW DDL(CREATE VIEW)
 				case *ast.CreateViewStmt:
 					savePos = true
 					force = true
-					if err = c.eventHandler.OnViewDDL(pos, e, tabSmt); err != nil {
+					if err = c.eventHandler.OnViewDDL(pos, e, tabSmt, ev.RawData); err != nil {
 						return errors.Trace(err)
 					}
 				// +++++++++++++++++++++ INDEX DDL(CREATE SEQUENCE、DROP SEQUENCE、ALTER SEQUENCE)
 				case *ast.CreateSequenceStmt, *ast.DropSequenceStmt, *ast.AlterSequenceStmt:
 					savePos = true
 					force = true
-					if err = c.eventHandler.OnSequenceDDL(pos, e, tabSmt); err != nil {
+					if err = c.eventHandler.OnSequenceDDL(pos, e, tabSmt, ev.RawData); err != nil {
 						return errors.Trace(err)
 					}
 				// +++++++++++++++++++++ USER ROLE DDL(CREATE USER、ALTER USER、DROP USER、RENAME USER、GRANT PROXY、GRANT ROLE、GRANT STMT)
 				case *ast.CreateUserStmt, *ast.AlterUserStmt, *ast.DropUserStmt, *ast.RenameUserStmt:
 					savePos = true
 					force = true
-					if err = c.eventHandler.OnUserDDL(pos, e, tabSmt); err != nil {
+					if err = c.eventHandler.OnUserDDL(pos, e, tabSmt, ev.RawData); err != nil {
 						return errors.Trace(err)
 					}
 				case *ast.GrantProxyStmt, *ast.GrantRoleStmt, *ast.GrantStmt:
 					savePos = true
 					force = true
-					if err = c.eventHandler.OnGrantDDL(pos, e, tabSmt); err != nil {
+					if err = c.eventHandler.OnGrantDDL(pos, e, tabSmt, ev.RawData); err != nil {
 						return errors.Trace(err)
 					}
 				case *ast.BeginStmt, *ast.CommitStmt:
 					// 不可立即更新postion，因为begin和commit不算是一个整的事务
-					if err = c.eventHandler.OnTransaction(pos, e, tabSmt); err != nil {
+					if err = c.eventHandler.OnTransaction(pos, e, tabSmt, ev.RawData); err != nil {
 						return errors.Trace(err)
 					}
 
@@ -299,7 +299,7 @@ func (c *Canal) updateReplicationDelay(ev *replication.BinlogEvent) {
 	atomic.StoreUint32(c.delay, newDelay)
 }
 
-func (c *Canal) handleRowsEvent(e *replication.BinlogEvent) error {
+func (c *Canal) handleRowsEvent(e *replication.BinlogEvent, rawData []byte) error {
 	ev := e.Event.(*replication.RowsEvent)
 
 	var action string
@@ -314,7 +314,7 @@ func (c *Canal) handleRowsEvent(e *replication.BinlogEvent) error {
 		return errors.Errorf("%s not supported now", e.Header.EventType)
 	}
 	events := newRowsEvent(action, ev, e.Header)
-	return c.eventHandler.OnRow(events)
+	return c.eventHandler.OnRow(events, rawData)
 }
 
 func (c *Canal) FlushBinlog() error {

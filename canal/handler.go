@@ -6,64 +6,81 @@ import (
 )
 
 type EventHandler interface {
-	OnRotate(roateEvent *replication.RotateEvent) error
-	OnRow(e *RowsEvent) error
-	OnXID(nextPos mysql.Position, xid *replication.XIDEvent) error
-	OnGTID(gtid mysql.GTIDSet) error
+	OnRotate(roateEvent *replication.RotateEvent, rawData []byte) error
+	OnRow(e *RowsEvent, rawData []byte) error
+	OnXID(nextPos mysql.Position, xid *replication.XIDEvent, rawData []byte) error
+	OnGTID(gtid mysql.GTIDSet, rawData []byte) error
 	// OnPosSynced Use your own way to sync position. When force is true, sync position immediately.
 	OnPosSynced(pos mysql.Position, set mysql.GTIDSet, force bool) error
 	String() string
 
-	OnTableDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error
-	OnDataBaseDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error
-	OnIndexDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error
-	OnViewDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error
-	OnSequenceDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error
-	OnUserDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error
-	OnGrantDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error
-	OnTransaction(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error
+	OnTableDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}, rawData []byte) error
+	OnDataBaseDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}, rawData []byte) error
+	OnIndexDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}, rawData []byte) error
+	OnViewDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}, rawData []byte) error
+	OnSequenceDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}, rawData []byte) error
+	OnUserDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}, rawData []byte) error
+	OnGrantDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}, rawData []byte) error
+	OnTransaction(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}, rawData []byte) error
 }
 
 type DummyEventHandler struct{}
 
-func (h *DummyEventHandler) OnTableDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, tabDDL interface{}) error {
+func (h *DummyEventHandler) OnTableDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, tabDDL interface{}, rawData []byte) error {
 	return nil
 }
 
-func (h *DummyEventHandler) OnDataBaseDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, dbDDL interface{}) error {
+func (h *DummyEventHandler) OnDataBaseDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, dbDDL interface{}, rawData []byte) error {
 	return nil
 }
 
-func (h *DummyEventHandler) OnIndexDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error {
+func (h *DummyEventHandler) OnIndexDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}, rawData []byte) error {
 	return nil
 }
 
-func (h *DummyEventHandler) OnViewDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error {
+func (h *DummyEventHandler) OnViewDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}, rawData []byte) error {
 	return nil
 }
 
-func (h *DummyEventHandler) OnSequenceDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error {
+func (h *DummyEventHandler) OnSequenceDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}, rawData []byte) error {
 	return nil
 }
 
-func (h *DummyEventHandler) OnUserDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error {
+func (h *DummyEventHandler) OnUserDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}, rawData []byte) error {
 	return nil
 }
 
-func (h *DummyEventHandler) OnTransaction(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error {
+func (h *DummyEventHandler) OnTransaction(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}, rawData []byte) error {
 	return nil
 }
 
-func (h *DummyEventHandler) OnGrantDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}) error {
+func (h *DummyEventHandler) OnGrantDDL(nextPos mysql.Position, queryEvent *replication.QueryEvent, d interface{}, rawData []byte) error {
 	return nil
 }
 
-func (h *DummyEventHandler) OnRotate(*replication.RotateEvent) error                   { return nil }
-func (h *DummyEventHandler) OnRow(*RowsEvent) error                                    { return nil }
-func (h *DummyEventHandler) OnXID(pos mysql.Position, xid *replication.XIDEvent) error { return nil }
-func (h *DummyEventHandler) OnGTID(mysql.GTIDSet) error                                { return nil }
-func (h *DummyEventHandler) OnPosSynced(mysql.Position, mysql.GTIDSet, bool) error     { return nil }
-func (h *DummyEventHandler) String() string                                            { return "DummyEventHandler" }
+func (h *DummyEventHandler) OnRotate(*replication.RotateEvent, []byte) error {
+	return nil
+}
+
+func (h *DummyEventHandler) OnRow(*RowsEvent, []byte) error {
+	return nil
+}
+
+func (h *DummyEventHandler) OnXID(pos mysql.Position, xid *replication.XIDEvent, rawData []byte) error {
+	return nil
+}
+
+func (h *DummyEventHandler) OnGTID(mysql.GTIDSet, []byte) error {
+	return nil
+}
+
+func (h *DummyEventHandler) OnPosSynced(mysql.Position, mysql.GTIDSet, bool) error {
+	return nil
+}
+
+func (h *DummyEventHandler) String() string {
+	return "DummyEventHandler"
+}
 
 // `SetEventHandler` registers the sync handler, you must register your
 // own handler before starting Canal.
